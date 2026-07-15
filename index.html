@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📅 Registro de Marcaciones</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* Formulario */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        input, textarea {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .buttons-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Tabla de historial */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        /* Utilidades */
+        .badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+    </style>
+    <!-- Incluir SheetJS para generar archivos .xlsx reales y nativos sin advertencias de Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📅 Registro personal Ransa</h1>
+        <div class="subtitle">Control de personal fuera de bodega</div>
+    </header>
+
+    <!-- Formulario de Registro -->
+    <div class="card">
+        <div class="card-title">Nueva Marcación</div>
+        <form id="formMarcacion">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="nombre">Nombre y Apellido</label>
+                    <input type="text" id="nombre" placeholder="Ej. Juan Pérez" required>
+                </div>
+                <div class="form-group">
+                    <label for="entrada">Hora de Entrada</label>
+                    <input type="time" id="entrada" required>
+                </div>
+                <div class="form-group">
+                    <label for="salida">Hora de Salida</label>
+                    <input type="time" id="salida" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="detalle">Detalle / Descripción del Trabajo</label>
+                    <textarea id="detalle" placeholder="Describe las tareas realizadas fuera de bodega..." required></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn">Registrar Marcación</button>
+        </form>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+        <div class="actions-bar">
+            <div class="card-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">Historial Registrado</div>
+            <div class="buttons-group">
+                <button id="btnLimpiar" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem;">Limpiar Historial</button>
+                <button id="btnExportar" class="btn btn-success" style="padding: 8px 16px; font-size: 0.85rem;">Exportar a Excel</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="tablaHistorial">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Colaborador</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Tiempo Trab.</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody id="historialCuerpo">
+                    <!-- Los datos se inyectarán aquí dinámicamente -->
+                </tbody>
+            </table>
+            <div id="sinDatos" class="empty-state">No hay marcaciones registradas todavía.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Cambio a tipo modulo para poder usar los SDKs de Firebase -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // Tu configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyClp2tVcoeIE_ZOedIzP6zyEXEoP9Em0tM",
+        authDomain: "chatpareja-3fbce.firebaseapp.com",
+        databaseURL: "https://chatpareja-3fbce-default-rtdb.firebaseio.com",
+        projectId: "chatpareja-3fbce",
+        storageBucket: "chatpareja-3fbce.firebasestorage.app",
+        messagingSenderId: "954583350974",
+        appId: "1:954583350974:web:021840b05404daafd728ef"
+    };
+
+    // Inicializar Firebase y Realtime Database
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const marcacionesRef = ref(db, 'marcaciones');
+
+    // Variable global local para mantener una copia de los datos activos para la exportación
+    let registrosActuales = [];
+
+    // Configurar la fecha de hoy por defecto al cargar la página e iniciar la escucha en vivo
+    document.addEventListener('DOMContentLoaded', () => {
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha').value = hoy;
+        escucharFirebaseEnVivo();
+    });
+
+    // Función para calcular la diferencia de horas de forma amigable
+    function calcularDiferenciaHoras(horaInicio, horaFin) {
+        if (!horaInicio || !horaFin) return "N/A";
+
+        const [horasI, minutosI] = horaInicio.split(':').map(Number);
+        const [horasF, minutosF] = horaFin.split(':').map(Number);
+
+        let inicioEnMinutos = horasI * 60 + minutosI;
+        let finEnMinutos = horasF * 60 + minutosF;
+
+        if (finEnMinutos < inicioEnMinutos) {
+            finEnMinutos += 24 * 60;
+        }
+
+        const diferenciaMinutos = finEnMinutos - inicioEnMinutos;
+        const hrs = Math.floor(diferenciaMinutos / 60);
+        const mins = diferenciaMinutos % 60;
+
+        let resultado = "";
+        if (hrs > 0) resultado += `${hrs}h `;
+        if (mins > 0 || hrs === 0) resultado += `${mins}m`;
+
+        return resultado;
+    }
+
+    // Escuchar cambios de Firebase en tiempo real
+    function escucharFirebaseEnVivo() {
+        onValue(marcacionesRef, (snapshot) => {
+            const data = snapshot.val();
+            const tablaCuerpo = document.getElementById('historialCuerpo');
+            const sinDatos = document.getElementById('sinDatos');
+
+            tablaCuerpo.innerHTML = '';
+            registrosActuales = [];
+
+            if (!data) {
+                sinDatos.style.display = 'block';
+                return;
+            }
+
+            sinDatos.style.display = 'none';
+
+            // Convertir el objeto de objetos de Firebase en una lista
+            Object.keys(data).forEach(key => {
+                registrosActuales.push({
+                    id: key,
+                    ...data[key]
+                });
+            });
+
+            // Ordenar por fecha descendente (lo más nuevo primero)
+            registrosActuales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            // Renderizar filas en la tabla
+            registrosActuales.forEach(m => {
+                const tr = document.createElement('tr');
+                const fechaFormateada = m.fecha.split('-').reverse().join('/');
+
+                tr.innerHTML = `
+                    <td><strong>${fechaFormateada}</strong></td>
+                    <td>${m.nombre}</td>
+                    <td>${m.entrada}</td>
+                    <td>${m.salida}</td>
+                    <td><span class="badge">${m.tiempoTrabajado}</span></td>
+                    <td style="max-width: 250px; word-wrap: break-word;">${m.detalle}</td>
+                `;
+                tablaCuerpo.appendChild(tr);
+            });
+        });
+    }
+
+    // Guardar nueva marcación en Firebase
+    document.getElementById('formMarcacion').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const fecha = document.getElementById('fecha').value;
+        const nombre = document.getElementById('nombre').value;
+        const entrada = document.getElementById('entrada').value;
+        const salida = document.getElementById('salida').value;
+        const detalle = document.getElementById('detalle').value;
+        const tiempoTrabajado = calcularDiferenciaHoras(entrada, salida);
+
+        const nuevaMarcacion = {
+            fecha,
+            nombre,
+            entrada,
+            salida,
+            tiempoTrabajado,
+            detalle,
+            timestamp: Date.now()
+        };
+
+        // Empujar los datos directamente a Firebase
+        push(marcacionesRef, nuevaMarcacion)
+            .then(() => {
+                // Limpiar formulario excepto la fecha
+                document.getElementById('nombre').value = '';
+                document.getElementById('entrada').value = '';
+                document.getElementById('salida').value = '';
+                document.getElementById('detalle').value = '';
+            })
+            .catch((error) => {
+                alert("Error al guardar en Firebase: " + error.message);
+            });
+    });
+
+    // Exportar datos a Excel (.xlsx verdadero) sin advertencias de formato
+    document.getElementById('btnExportar').addEventListener('click', () => {
+        if (registrosActuales.length === 0) {
+            alert('No hay datos registrados para exportar.');
+            return;
+        }
+
+        // Crear una matriz de datos adecuada para SheetJS
+        const dataRows = [
+            ["Fecha", "Colaborador", "Hora Entrada", "Hora Salida", "Tiempo Trabajado", "Detalle/Descripcion"]
+        ];
+
+        registrosActuales.forEach(m => {
+            const fechaFormateada = m.fecha.split('-').reverse().join('/');
+            dataRows.push([
+                fechaFormateada,
+                m.nombre,
+                m.entrada,
+                m.salida,
+                m.tiempoTrabajado,
+                m.detalle
+            ]);
+        });
+
+        // Crear el libro de trabajo y la hoja usando XLSX
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataRows);
+
+        // Ajustar el ancho automático de las columnas para que se lea perfecto
+        const wscols = [
+            { wch: 12 }, // Fecha
+            { wch: 20 }, // Colaborador
+            { wch: 15 }, // Hora Entrada
+            { wch: 15 }, // Hora Salida
+            { wch: 18 }, // Tiempo Trabajado
+            { wch: 45 }  // Detalle/Descripcion (más ancho para el detalle)
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, "Marcaciones");
+
+        // Guardar el archivo como un .xlsx real. ¡Cero avisos de formato incorrecto!
+        const fechaActual = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `Reporte_Marcaciones_${fechaActual}.xlsx`);
+    });
+
+    // Limpiar historial completo en Firebase con confirmación
+    document.getElementById('btnLimpiar').addEventListener('click', () => {
+        if (registrosActuales.length === 0) {
+            alert('No hay marcaciones registradas.');
+            return;
+        }
+
+        const confirmar = confirm('¿Está completamente seguro de que desea eliminar el historial?');
+        
+        if (confirmar) {
+            // Seteamos la referencia en null para limpiar el nodo por completo en Firebase
+            set(marcacionesRef, null)
+                .catch((error) => {
+                    alert("Error al limpiar el historial: " + error.message);
+                });
+        }
+    });
+</script>
+
+</body>
+</html>
