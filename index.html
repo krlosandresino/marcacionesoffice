@@ -463,21 +463,35 @@
         XLSX.writeFile(wb, `Reporte_Marcaciones_${fechaActual}.xlsx`);
     });
 
-    // Limpiar historial completo en Firebase con confirmación
+    // Limpiar historial completo en Firebase con protección por contraseña
     document.getElementById('btnLimpiar').addEventListener('click', () => {
         if (registrosActuales.length === 0) {
-            alert('No hay marcaciones registradas.');
+            alert('No hay marcaciones registradas para borrar.');
             return;
         }
 
-        const confirmar = confirm('¿Está completamente seguro de que desea eliminar el historial?');
+        // Solicitar la clave de acceso al usuario
+        const claveIngresada = prompt('Por favor, introduzca la contraseña de autorización:');
         
-        if (confirmar) {
-            // Seteamos la referencia en null para limpiar el nodo por completo en Firebase
-            set(marcacionesRef, null)
-                .catch((error) => {
-                    alert("Error al limpiar el historial: " + error.message);
-                });
+        // Si el usuario canceló el prompt
+        if (claveIngresada === null) return;
+
+        // Validar contraseña
+        if (claveIngresada === 'Oriflame2026') {
+            const confirmar = confirm('¿Está completamente seguro de que desea eliminar el historial?');
+            
+            if (confirmar) {
+                // Seteamos la referencia en null para limpiar el nodo por completo en Firebase
+                set(marcacionesRef, null)
+                    .then(() => {
+                        alert('Historial borrado exitosamente.');
+                    })
+                    .catch((error) => {
+                        alert("Error al limpiar el historial: " + error.message);
+                    });
+            }
+        } else {
+            alert('Contraseña incorrecta. Acción cancelada.');
         }
     });
 </script>
