@@ -150,6 +150,23 @@
             background-color: var(--danger-hover);
         }
 
+        .btn-delete-row {
+            background-color: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-row:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
         .actions-bar {
             display: flex;
             justify-content: space-between;
@@ -269,6 +286,7 @@
                         <th>Salida</th>
                         <th>Tiempo Trab.</th>
                         <th>Detalle</th>
+                        <th style="text-align: center;">Acción</th>
                     </tr>
                 </thead>
                 <tbody id="historialCuerpo">
@@ -283,7 +301,7 @@
 <!-- Cambio a tipo modulo para poder usar los SDKs de Firebase -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, set, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     // Tu configuración de Firebase
     const firebaseConfig = {
@@ -376,8 +394,45 @@
                     <td>${m.salida}</td>
                     <td><span class="badge">${m.tiempoTrabajado}</span></td>
                     <td style="max-width: 250px; word-wrap: break-word;">${m.detalle}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-delete-row" data-id="${m.id}">🗑️ Borrar</button>
+                    </td>
                 `;
                 tablaCuerpo.appendChild(tr);
+            });
+
+            // Asignar eventos de escucha a los nuevos botones de eliminación individual agregados
+            asignarEventosEliminar();
+        });
+    }
+
+    // Función para manejar el clic de eliminación individual
+    function asignarEventosEliminar() {
+        const botones = document.querySelectorAll('.btn-delete-row');
+        botones.forEach(boton => {
+            boton.addEventListener('click', (e) => {
+                const idRegistro = e.target.getAttribute('data-id');
+                
+                // Solicitar clave de seguridad
+                const claveIngresada = prompt('Por favor, introduzca la contraseña de autorización para eliminar este registro:');
+                
+                if (claveIngresada === null) return; // Cancelado por el usuario
+
+                if (claveIngresada === 'Oriflame2026') {
+                    const confirmar = confirm('¿Está seguro de que desea eliminar este registro de marcación?');
+                    if (confirmar) {
+                        const individualRef = ref(db, `marcaciones/${idRegistro}`);
+                        remove(individualRef)
+                            .then(() => {
+                                alert('Marcación eliminada con éxito.');
+                            })
+                            .catch((error) => {
+                                alert('Error al intentar borrar el registro: ' + error.message);
+                            });
+                    }
+                } else {
+                    alert('Contraseña incorrecta. Acción cancelada.');
+                }
             });
         });
     }
