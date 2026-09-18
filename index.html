@@ -234,6 +234,12 @@
             font-weight: 600;
             font-size: 0.8rem;
         }
+        
+        .row-checkbox, #chkSelectAll {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
     </style>
     <!-- Incluir SheetJS para generar archivos .xlsx reales y nativos sin advertencias de Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -281,6 +287,7 @@
         <div class="actions-bar">
             <div class="card-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">Historial Registrado</div>
             <div class="buttons-group">
+                <button id="btnBorrarSeleccion" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem; display: none;">Borrar Seleccionados</button>
                 <button id="btnLimpiar" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem;">Limpiar Historial</button>
                 <button id="btnExportar" class="btn btn-success" style="padding: 8px 16px; font-size: 0.85rem;">Exportar a Excel</button>
             </div>
@@ -290,6 +297,7 @@
             <table id="tablaHistorial">
                 <thead>
                     <tr>
+                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="chkSelectAll" title="Seleccionar todos"></th>
                         <th>Fecha</th>
                         <th>Colaborador</th>
                         <th>Entrada</th>
@@ -398,6 +406,7 @@
                 const fechaFormateada = m.fecha.split('-').reverse().join('/');
 
                 tr.innerHTML = `
+                    <td style="text-align: center;"><input type="checkbox" class="row-checkbox" value="${m.id}"></td>
                     <td><strong>${fechaFormateada}</strong></td>
                     <td>${m.nombre}</td>
                     <td>${m.entrada}</td>
@@ -411,9 +420,40 @@
                 tablaCuerpo.appendChild(tr);
             });
 
-            // Asignar eventos de escucha a los nuevos botones de eliminación individual agregados
+            // Asignar eventos a botones y checkboxes
             asignarEventosEliminar();
+            asignarEventosCheckboxes();
         });
+    }
+    
+    // Función para manejar los checkboxes de selección
+    function asignarEventosCheckboxes() {
+        const selectAll = document.getElementById('chkSelectAll');
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const btnBorrarSeleccion = document.getElementById('btnBorrarSeleccion');
+
+        const toggleBtnBorrar = () => {
+            const haySeleccionados = document.querySelectorAll('.row-checkbox:checked').length > 0;
+            btnBorrarSeleccion.style.display = haySeleccionados ? 'inline-flex' : 'none';
+        };
+
+        if(selectAll) {
+            selectAll.checked = false; 
+            selectAll.addEventListener('change', (e) => {
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                toggleBtnBorrar();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const todosSeleccionados = document.querySelectorAll('.row-checkbox:checked').length === checkboxes.length;
+                if(selectAll) selectAll.checked = todosSeleccionados;
+                toggleBtnBorrar();
+            });
+        });
+        
+        toggleBtnBorrar(); // Estado inicial
     }
 
     // Función para manejar el clic de eliminación individual
@@ -446,6 +486,30 @@
             });
         });
     }
+
+    // Lógica para el botón "Borrar Seleccionados"
+    document.getElementById('btnBorrarSeleccion').addEventListener('click', () => {
+        const seleccionados = document.querySelectorAll('.row-checkbox:checked');
+        if (seleccionados.length === 0) return;
+
+        const claveIngresada = prompt(`Introduzca la contraseña para eliminar ${seleccionados.length} registro(s):`);
+        if (claveIngresada === null) return;
+
+        if (claveIngresada === 'Oriflame2026') {
+            const confirmar = confirm(`¿Está seguro de que desea eliminar los ${seleccionados.length} registros seleccionados?`);
+            if (confirmar) {
+                const promesas = Array.from(seleccionados).map(checkbox => {
+                    return remove(ref(db, `marcaciones/${checkbox.value}`));
+                });
+
+                Promise.all(promesas)
+                    .then(() => alert('Registros seleccionados eliminados con éxito.'))
+                    .catch((error) => alert('Error al intentar borrar los registros: ' + error.message));
+            }
+        } else {
+            alert('Contraseña incorrecta. Acción cancelada.');
+        }
+    });
 
     // Guardar nueva marcación en Firebase
     document.getElementById('formMarcacion').addEventListener('submit', (e) => {
