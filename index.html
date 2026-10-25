@@ -240,6 +240,37 @@
             width: 16px;
             height: 16px;
         }
+
+        /* Compactación de textos largos en la tabla */
+        .detalle-texto {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .detalle-texto.expandido {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+
+        .btn-toggle-detalle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .btn-toggle-detalle:hover {
+            text-decoration: underline;
+            color: var(--primary-hover);
+        }
     </style>
     <!-- Incluir SheetJS para generar archivos .xlsx reales y nativos sin advertencias de Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -407,6 +438,7 @@
             registrosActuales.forEach(m => {
                 const tr = document.createElement('tr');
                 const fechaFormateada = m.fecha.split('-').reverse().join('/');
+                const esTextoLargo = m.detalle && m.detalle.length > 80;
 
                 tr.innerHTML = `
                     <td style="text-align: center;"><input type="checkbox" class="row-checkbox" value="${m.id}"></td>
@@ -415,7 +447,10 @@
                     <td>${m.entrada}</td>
                     <td>${m.salida}</td>
                     <td><span class="badge">${m.tiempoTrabajado}</span></td>
-                    <td style="max-width: 250px; word-wrap: break-word;">${m.detalle}</td>
+                    <td style="max-width: 250px; word-wrap: break-word;">
+                        <div class="detalle-texto">${m.detalle}</div>
+                        ${esTextoLargo ? '<button type="button" class="btn-toggle-detalle">Ver más</button>' : ''}
+                    </td>
                     <td style="text-align: center;">
                         <button class="btn-delete-row" data-id="${m.id}">🗑️ Borrar</button>
                     </td>
@@ -426,6 +461,19 @@
             // Asignar eventos a botones y checkboxes
             asignarEventosEliminar();
             asignarEventosCheckboxes();
+            asignarEventosDetalle();
+        });
+    }
+
+    // Función para expandir o contraer el detalle largo
+    function asignarEventosDetalle() {
+        const botonesToggle = document.querySelectorAll('.btn-toggle-detalle');
+        botonesToggle.forEach(boton => {
+            boton.addEventListener('click', (e) => {
+                const contenedorTexto = e.target.previousElementSibling;
+                const estaExpandido = contenedorTexto.classList.toggle('expandido');
+                e.target.textContent = estaExpandido ? 'Ver menos' : 'Ver más';
+            });
         });
     }
     
